@@ -15,7 +15,11 @@ export interface InstagramPost {
  * @returns A promise that resolves to an array of InstagramPost objects.
  */
 export async function getLatestInstagramPosts(accountName: string): Promise<InstagramPost[]> {
-  const corsProxyUrl = 'https://corsproxy.io/?'; // Using corsproxy.io as a CORS proxy
+  const corsProxyUrl = process.env.NEXT_PUBLIC_CORS_PROXY_URL; // Using corsproxy.io as a CORS proxy
+
+  if (!corsProxyUrl) {
+    throw new Error('CORS proxy URL is not defined in environment variables.');
+  }
 
   try {
     const targetUrl = `https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`;
@@ -31,7 +35,7 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
-        throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
+        throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
       }
 
       const data = await response.json();
