@@ -32,7 +32,9 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
       throw new Error(`Could not find user ${accountName}`);
     }
 
-    const edges = data.data.user.edge_owner_to_timeline_media.edges;
+    // Check if edge_owner_to_timeline_media exists before accessing edges
+    const timelineMedia = data.data.user.edge_owner_to_timeline_media;
+    const edges = timelineMedia ? timelineMedia.edges : [];
 
     const posts: InstagramPost[] = edges.map((edge: any) => ({
       imageUrl: edge.node.display_url,
