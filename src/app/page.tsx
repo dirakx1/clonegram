@@ -30,6 +30,7 @@ export default function Home() {
         title: 'Error generating images',
         description: error.message,
       });
+      setImageUrls([]); // Clear existing images on error
     } finally {
       setLoading(false);
     }
@@ -45,6 +46,7 @@ export default function Home() {
         title: 'Error fetching Instagram posts',
         description: error.message,
       });
+      setInstagramPosts([]); // Clear existing posts on error
     }
   };
 
@@ -85,39 +87,43 @@ export default function Home() {
 
         <h2 className="text-2xl font-bold mb-4">Generated Images</h2>
         <div className="flex flex-wrap justify-center gap-4">
-          {imageUrls.map((imageUrl, index) => (
-            <Card key={index} className="w-80 shadow-md transition-transform hover:scale-105">
-              <CardHeader>
-                <CardTitle>Generated Image #{index + 1}</CardTitle>
-                <CardDescription>Similar style</CardDescription>
-              </CardHeader>
-              <CardContent className="p-2">
-                <img
-                  src={imageUrl}
-                  alt={`Generated Image ${index + 1}`}
-                  className="rounded-md aspect-square object-cover w-full h-full"
-                  style={{
-                    minHeight: '200px',
-                  }}
-                  onError={(e: any) => {
-                    e.target.onerror = null; // Prevents infinite loop
-                    e.target.src = `https://picsum.photos/200/200?random=${index}`; // Placeholder
-                  }}
-                />
-              </CardContent>
-              <div className="flex justify-between items-center p-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadImage(imageUrl)}
-                  className="flex items-center space-x-2"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Download</span>
-                </Button>
-              </div>
-            </Card>
-          ))}
+          {imageUrls.length > 0 ? (
+            imageUrls.map((imageUrl, index) => (
+              <Card key={index} className="w-80 shadow-md transition-transform hover:scale-105">
+                <CardHeader>
+                  <CardTitle>Generated Image #{index + 1}</CardTitle>
+                  <CardDescription>Similar style</CardDescription>
+                </CardHeader>
+                <CardContent className="p-2">
+                  <img
+                    src={imageUrl}
+                    alt={`Generated Image ${index + 1}`}
+                    className="rounded-md aspect-square object-cover w-full h-full"
+                    style={{
+                      minHeight: '200px',
+                    }}
+                    onError={(e: any) => {
+                      e.target.onerror = null; // Prevents infinite loop
+                      e.target.src = `https://picsum.photos/200/200?random=${index}`; // Placeholder
+                    }}
+                  />
+                </CardContent>
+                <div className="flex justify-between items-center p-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadImage(imageUrl)}
+                    className="flex items-center space-x-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Download</span>
+                  </Button>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p>No images generated yet. Click "Generate More Images" to start.</p>
+          )}
         </div>
 
         <Button
@@ -131,27 +137,31 @@ export default function Home() {
 
         <h2 className="text-2xl font-bold mt-12 mb-4">Actual Instagram Posts</h2>
         <div className="flex flex-wrap justify-center gap-4">
-          {instagramPosts.map((post, index) => (
-            <Card key={index} className="w-80 shadow-md">
-              <CardHeader>
-                <CardTitle>Instagram Post #{index + 1}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2">
-                <img
-                  src={post.imageUrl}
-                  alt={`Instagram Post ${index + 1}`}
-                  className="rounded-md aspect-square object-cover w-full h-full"
-                  style={{
-                    minHeight: '200px',
-                  }}
-                  onError={(e: any) => {
-                    e.target.onerror = null; // Prevents infinite loop
-                    e.target.src = `https://picsum.photos/200/200?random=${index}`; // Placeholder
-                  }}
-                />
-              </CardContent>
-            </Card>
-          ))}
+          {instagramPosts.length > 0 ? (
+            instagramPosts.map((post, index) => (
+              <Card key={index} className="w-80 shadow-md">
+                <CardHeader>
+                  <CardTitle>Instagram Post #{index + 1}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                  <img
+                    src={post.imageUrl}
+                    alt={`Instagram Post ${index + 1}`}
+                    className="rounded-md aspect-square object-cover w-full h-full"
+                    style={{
+                      minHeight: '200px',
+                    }}
+                    onError={(e: any) => {
+                      e.target.onerror = null; // Prevents infinite loop
+                      e.target.src = `https://picsum.photos/200/200?random=${index}`; // Placeholder
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <p>Failed to load Instagram posts.</p>
+          )}
         </div>
       </main>
     </div>

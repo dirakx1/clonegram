@@ -50,18 +50,10 @@ async input => {
     output: {
       schema: z.string().describe('The URL of the generated image.'),
     },
-    prompt: `Create an image in the following style: {{{style}}}, with subjects including: {{{subjects}}}, and a color palette of: {{{colorPalette}}}.`,
+    prompt: `Create an image in the following style: {{{style}}}, with subjects including: {{{subjects}}}, and a color palette of: {{{colorPalette}}}.  Return ONLY the URL of the generated image.`,
   });
   const {output} = await generateImagePrompt(input);
-  return output!;
-});
-
-const generateSimilarImagePrompt = ai.definePrompt({
-  name: 'generateSimilarImagePrompt',
-  tools: [generateImage],
-  prompt: `You are an AI assistant that generates images similar to a given Instagram account.
-Then, use the generateImage tool to generate new images with a similar style, subject matter, and color palette.\nReturn a JSON array of image URLs.
-`,
+  return output;
 });
 
 const generateSimilarImageFlow = ai.defineFlow<
@@ -89,5 +81,3 @@ async input => {
     imageUrls: generatedImageUrls,
   };
 });
-
-
