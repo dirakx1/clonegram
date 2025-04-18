@@ -25,7 +25,6 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
 
   try {
     const targetUrl = `https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`;
-    const encodedTargetUrl = encodeURIComponent(targetUrl);
 
     try {
       const response = await fetch(`${corsProxyUrl}${targetUrl}`, {
