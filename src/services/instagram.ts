@@ -21,33 +21,38 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
     const targetUrl = `https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`;
     const encodedTargetUrl = encodeURIComponent(targetUrl);
 
-    const response = await fetch(`${corsProxyUrl}${encodedTargetUrl}`, {
-      headers: {
-        'X-IG-App-ID': '936619743392459', // Required header for accessing the Instagram API
-      },
-    });
+    try {
+      const response = await fetch(`${corsProxyUrl}${encodedTargetUrl}`, {
+        headers: {
+          'X-IG-App-ID': '936619743392459', // Required header for accessing the Instagram API
+        },
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
-      throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
+        throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.data?.user) {
+        throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
+      }
+
+      // Check if edge_owner_to_timeline_media exists before accessing edges
+      const timelineMedia = data.data.user.edge_owner_to_timeline_media;
+      const edges = timelineMedia ? timelineMedia.edges : [];
+
+      const posts: InstagramPost[] = edges.map((edge: any) => ({
+        imageUrl: edge.node.display_url,
+      }));
+
+      return posts;
+    } catch (fetchError: any) {
+      console.error('Error during fetch:', fetchError);
+      throw new Error(`Failed to fetch Instagram posts due to network error: ${fetchError.message}`);
     }
-
-    const data = await response.json();
-
-    if (!data.data?.user) {
-      throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
-    }
-
-    // Check if edge_owner_to_timeline_media exists before accessing edges
-    const timelineMedia = data.data.user.edge_owner_to_timeline_media;
-    const edges = timelineMedia ? timelineMedia.edges : [];
-
-    const posts: InstagramPost[] = edges.map((edge: any) => ({
-      imageUrl: edge.node.display_url,
-    }));
-
-    return posts;
   } catch (error: any) {
     console.error('Error fetching Instagram posts:', error);
     // Include the stack trace in the error message
