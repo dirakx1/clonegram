@@ -1,4 +1,3 @@
-
 'use client';
 
 import {useState, useEffect} from 'react';
@@ -7,11 +6,13 @@ import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Download, RefreshCw} from 'lucide-react';
 import {useToast} from '@/hooks/use-toast';
+import {getLatestInstagramPosts, InstagramPost} from '@/services/instagram';
 
 const INSTAGRAM_ACCOUNT = 'renatacolombia';
 
 export default function Home() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [instagramPosts, setInstagramPosts] = useState<InstagramPost[]>([]);
   const [loading, setLoading] = useState(false);
   const {toast} = useToast();
 
@@ -34,6 +35,19 @@ export default function Home() {
     }
   };
 
+  const fetchInstagramPosts = async () => {
+    try {
+      const posts = await getLatestInstagramPosts(INSTAGRAM_ACCOUNT);
+      setInstagramPosts(posts);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error fetching Instagram posts',
+        description: error.message,
+      });
+    }
+  };
+
   const downloadImage = (imageUrl: string) => {
     const link = document.createElement('a');
     link.href = imageUrl;
@@ -50,6 +64,7 @@ export default function Home() {
 
   useEffect(() => {
     generateImages(); // Initial image generation on component mount
+    fetchInstagramPosts(); // Fetch Instagram posts on component mount
   }, []);
 
   return (
@@ -68,6 +83,7 @@ export default function Home() {
           </a>
         </p>
 
+        <h2 className="text-2xl font-bold mb-4">Generated Images</h2>
         <div className="flex flex-wrap justify-center gap-4">
           {imageUrls.map((imageUrl, index) => (
             <Card key={index} className="w-80 shadow-md transition-transform hover:scale-105">
@@ -108,6 +124,27 @@ export default function Home() {
           {loading && <RefreshCw className="animate-spin h-4 w-4" />}
           <span>{loading ? 'Generating...' : 'Generate More Images'}</span>
         </Button>
+
+        <h2 className="text-2xl font-bold mt-12 mb-4">Actual Instagram Posts</h2>
+        <div className="flex flex-wrap justify-center gap-4">
+          {instagramPosts.map((post, index) => (
+            <Card key={index} className="w-80 shadow-md">
+              <CardHeader>
+                <CardTitle>Instagram Post #{index + 1}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-2">
+                <img
+                  src={post.imageUrl}
+                  alt={`Instagram Post ${index + 1}`}
+                  className="rounded-md aspect-square object-cover w-full h-full"
+                  style={{
+                    minHeight: '200px',
+                  }}
+                />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </main>
     </div>
   );
