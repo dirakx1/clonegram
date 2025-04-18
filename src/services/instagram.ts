@@ -15,10 +15,10 @@ export interface InstagramPost {
  * @returns A promise that resolves to an array of InstagramPost objects.
  */
 export async function getLatestInstagramPosts(accountName: string): Promise<InstagramPost[]> {
-  const corsProxyUrl = 'https://corsproxy.io/?'; // Using corsproxy.io as a CORS proxy
+  const corsProxyUrl = 'https://api.allorigins.win/get?url='; // Using api.allorigins.win as a CORS proxy
 
   try {
-    const response = await fetch(`${corsProxyUrl}https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`, {
+    const response = await fetch(`${corsProxyUrl}${encodeURIComponent(`https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`)}`, {
       headers: {
         'X-IG-App-ID': '936619743392459', // Required header for accessing the Instagram API
       },
@@ -31,12 +31,24 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
 
     const data = await response.json();
 
-    if (!data.data?.user) {
-      throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
+    if (!data.contents) {
+      throw new Error(`Could not find data contents. Response: ${JSON.stringify(data)}`);
+    }
+
+    let parsedData;
+    try {
+        parsedData = JSON.parse(data.contents);
+    } catch (e: any) {
+        throw new Error(`Failed to parse JSON: ${e.message}. Data: ${data.contents}`);
+    }
+
+
+    if (!parsedData.data?.user) {
+      throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(parsedData)}`);
     }
 
     // Check if edge_owner_to_timeline_media exists before accessing edges
-    const timelineMedia = data.data.user.edge_owner_to_timeline_media;
+    const timelineMedia = parsedData.data.user.edge_owner_to_timeline_media;
     const edges = timelineMedia ? timelineMedia.edges : [];
 
     const posts: InstagramPost[] = edges.map((edge: any) => ({
