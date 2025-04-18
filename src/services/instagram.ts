@@ -15,8 +15,10 @@ export interface InstagramPost {
  * @returns A promise that resolves to an array of InstagramPost objects.
  */
 export async function getLatestInstagramPosts(accountName: string): Promise<InstagramPost[]> {
+  const corsProxyUrl = 'https://corsproxy.io/?'; // Using corsproxy.io as a CORS proxy
+
   try {
-    const response = await fetch(`https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`, {
+    const response = await fetch(`${corsProxyUrl}https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`, {
       headers: {
         'X-IG-App-ID': '936619743392459', // Required header for accessing the Instagram API
       },
