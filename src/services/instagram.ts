@@ -18,7 +18,8 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
   const corsProxyUrl = process.env.NEXT_PUBLIC_CORS_PROXY_URL; // Using corsproxy.io as a CORS proxy
 
   if (!corsProxyUrl) {
-    throw new Error('CORS proxy URL is not defined in environment variables.');
+    console.error('CORS proxy URL is not defined in environment variables. Ensure NEXT_PUBLIC_CORS_PROXY_URL is set.');
+    throw new Error('CORS proxy URL is not defined. Check your environment variables.');
   }
 
   try {

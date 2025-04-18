@@ -41,6 +41,7 @@ export default function Home() {
       const posts = await getLatestInstagramPosts(INSTAGRAM_ACCOUNT);
       setInstagramPosts(posts);
     } catch (error: any) {
+      console.error("Error fetching Instagram posts:", error, error.message);
       toast({
         variant: 'destructive',
         title: 'Error fetching Instagram posts',
