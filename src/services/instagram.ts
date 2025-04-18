@@ -30,7 +30,7 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
       const response = await fetch(`${corsProxyUrl}${targetUrl}`, {
         headers: {
           'X-IG-App-ID': '936619743392459', // Required header for accessing the Instagram API
-          'Cookie': 'ig_did=YOUR_IG_DID_VALUE; ig_nrcb=1', // Add a cookie to the header
+          //'Cookie': 'ig_did=YOUR_IG_DID_VALUE; ig_nrcb=1', // Add a cookie to the header
         },
       });
 
