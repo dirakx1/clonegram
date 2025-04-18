@@ -39,21 +39,26 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
         throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
       }
 
-      const data = await response.json();
+      try {
+        const data = await response.json();
 
-      if (!data.data?.user) {
-        throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
+        if (!data.data?.user) {
+          throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
+        }
+
+        // Check if edge_owner_to_timeline_media exists before accessing edges
+        const timelineMedia = data.data.user.edge_owner_to_timeline_media;
+        const edges = timelineMedia ? timelineMedia.edges : [];
+
+        const posts: InstagramPost[] = edges.map((edge: any) => ({
+          imageUrl: edge.node.display_url,
+        }));
+
+        return posts;
+      } catch (parseError: any) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error(`Failed to parse JSON response: ${parseError.message}`);
       }
-
-      // Check if edge_owner_to_timeline_media exists before accessing edges
-      const timelineMedia = data.data.user.edge_owner_to_timeline_media;
-      const edges = timelineMedia ? timelineMedia.edges : [];
-
-      const posts: InstagramPost[] = edges.map((edge: any) => ({
-        imageUrl: edge.node.display_url,
-      }));
-
-      return posts;
     } catch (fetchError: any) {
       console.error('Error during fetch:', fetchError);
       throw new Error(`Failed to fetch Instagram posts due to network error: ${fetchError.message}`);
