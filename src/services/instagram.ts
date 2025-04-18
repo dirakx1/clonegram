@@ -25,13 +25,14 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
     }
 
     const data = await response.json();
 
-    if (!data.data.user) {
-      throw new Error(`Could not find user ${accountName}`);
+    if (!data.data?.user) {
+      throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
     }
 
     // Check if edge_owner_to_timeline_media exists before accessing edges
@@ -45,6 +46,8 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
     return posts;
   } catch (error: any) {
     console.error('Error fetching Instagram posts:', error);
-    throw new Error(`Failed to fetch Instagram posts for account ${accountName}: ${error.message}`);
+    // Include the stack trace in the error message
+    const errorMessage = `Failed to fetch Instagram posts for account ${accountName}: ${error.message}. Stack: ${error.stack}`;
+    throw new Error(errorMessage);
   }
 }

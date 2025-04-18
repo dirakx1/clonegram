@@ -99,6 +99,10 @@ export default function Home() {
                   style={{
                     minHeight: '200px',
                   }}
+                  onError={(e: any) => {
+                    e.target.onerror = null; // Prevents infinite loop
+                    e.target.src = `https://picsum.photos/200/200?random=${index}`; // Placeholder
+                  }}
                 />
               </CardContent>
               <div className="flex justify-between items-center p-4">
@@ -139,6 +143,10 @@ export default function Home() {
                   className="rounded-md aspect-square object-cover w-full h-full"
                   style={{
                     minHeight: '200px',
+                  }}
+                  onError={(e: any) => {
+                    e.target.onerror = null; // Prevents infinite loop
+                    e.target.src = `https://picsum.photos/200/200?random=${index}`; // Placeholder
                   }}
                 />
               </CardContent>
