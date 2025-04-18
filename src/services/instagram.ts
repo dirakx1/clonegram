@@ -16,7 +16,7 @@ export interface InstagramPost {
  */
 export async function getLatestInstagramPosts(accountName: string): Promise<InstagramPost[]> {
   // Using corsproxy.io as a CORS proxy
-  const corsProxyUrl = process.env.NEXT_PUBLIC_CORS_PROXY_URL || 'https://corsproxy.io/?';
+  const corsProxyUrl = 'https://api.allorigins.win/raw?url=';
 
   if (!corsProxyUrl) {
     console.error('CORS proxy URL is not defined in environment variables. Ensure NEXT_PUBLIC_CORS_PROXY_URL is set.');
@@ -28,7 +28,7 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
     const encodedTargetUrl = encodeURIComponent(targetUrl);
 
     try {
-      const response = await fetch(`${corsProxyUrl}${encodedTargetUrl}`, {
+      const response = await fetch(`${corsProxyUrl}${targetUrl}`, {
         headers: {
           'X-IG-App-ID': '936619743392459', // Required header for accessing the Instagram API
         },
