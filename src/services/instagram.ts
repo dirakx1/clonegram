@@ -15,7 +15,8 @@ export interface InstagramPost {
  * @returns A promise that resolves to an array of InstagramPost objects.
  */
 export async function getLatestInstagramPosts(accountName: string): Promise<InstagramPost[]> {
-  const corsProxyUrl = process.env.NEXT_PUBLIC_CORS_PROXY_URL; // Using corsproxy.io as a CORS proxy
+  // Using corsproxy.io as a CORS proxy
+  const corsProxyUrl = process.env.NEXT_PUBLIC_CORS_PROXY_URL || 'https://corsproxy.io/?';
 
   if (!corsProxyUrl) {
     console.error('CORS proxy URL is not defined in environment variables. Ensure NEXT_PUBLIC_CORS_PROXY_URL is set.');
