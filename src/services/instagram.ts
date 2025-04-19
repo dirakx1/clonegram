@@ -24,9 +24,7 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
   }
 
   const targetUrl = `https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`;
-
-  try {
-    const headers = {
+  const headers = {
       "x-ig-app-id": "936619743392459",
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36",
       "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
@@ -34,42 +32,38 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
       "Accept": "*/*",
     };
 
+  try {
+    console.log(`Fetching Instagram posts for ${accountName} using URL: ${corsProxyUrl}${targetUrl}`);
+    const response = await fetch(`${corsProxyUrl}${targetUrl}`, {
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
+      throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
+    }
+
     try {
-      console.log(`Fetching Instagram posts for ${accountName} using URL: ${corsProxyUrl}${targetUrl}`);
-      const response = await fetch(`${corsProxyUrl}${targetUrl}`, {
-        headers: headers,
-      });
+      const data = await response.json();
+      console.log(`Successfully fetched data for ${accountName}:`, data);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
-        throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
+      if (!data.data?.user) {
+        throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
       }
 
-      try {
-        const data = await response.json();
-        console.log(`Successfully fetched data for ${accountName}:`, data);
+      // Check if edge_owner_to_timeline_media exists before accessing edges
+      const timelineMedia = data.data.user.edge_owner_to_timeline_media;
+      const edges = timelineMedia ? timelineMedia.edges : [];
 
-        if (!data.data?.user) {
-          throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
-        }
+      const posts: InstagramPost[] = edges.map((edge: any) => ({
+        imageUrl: edge.node.display_url,
+      }));
 
-        // Check if edge_owner_to_timeline_media exists before accessing edges
-        const timelineMedia = data.data.user.edge_owner_to_timeline_media;
-        const edges = timelineMedia ? timelineMedia.edges : [];
-
-        const posts: InstagramPost[] = edges.map((edge: any) => ({
-          imageUrl: edge.node.display_url,
-        }));
-
-        return posts;
-      } catch (parseError: any) {
-        console.error('Failed to parse JSON response:', parseError);
-        throw new Error(`Failed to parse JSON response.`);
-      }
-    } catch (fetchError: any) {
-      console.error('Error during fetch:', fetchError);
-      throw new Error('Failed to fetch Instagram posts due to a network error.');
+      return posts;
+    } catch (parseError: any) {
+      console.error('Failed to parse JSON response:', parseError);
+      throw new Error(`Failed to parse JSON response.`);
     }
   } catch (error: any) {
     console.error('Error fetching Instagram posts:', error);
