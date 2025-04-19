@@ -23,11 +23,13 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
     throw new Error('CORS proxy URL is not defined. Check your environment variables.');
   }
 
-  try {
-    const targetUrl = `https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`;
+  const targetUrl = `https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`;
 
+  try {
     try {
+      console.log(`Fetching Instagram posts for ${accountName} using URL: ${corsProxyUrl}${targetUrl}`);
       const response = await fetch(`${corsProxyUrl}${targetUrl}`, {
+        mode: 'cors', // Explicitly set mode to 'cors'
         headers: {
           'X-IG-App-ID': '936619743392459', // Required header for accessing the Instagram API
         },
@@ -36,11 +38,12 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
-        throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
+        throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
       }
 
       try {
         const data = await response.json();
+        console.log(`Successfully fetched data for ${accountName}:`, data);
 
         if (!data.data?.user) {
           throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
@@ -57,16 +60,15 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
         return posts;
       } catch (parseError: any) {
         console.error('Failed to parse JSON response:', parseError);
-        throw new Error(`Failed to parse JSON response: ${parseError.message}`);
+        throw new Error(`Failed to parse JSON response.`);
       }
     } catch (fetchError: any) {
       console.error('Error during fetch:', fetchError);
-      throw new Error(`Failed to fetch Instagram posts due to network error: ${fetchError.message}`);
+      throw new Error('Failed to fetch Instagram posts due to a network error.');
     }
   } catch (error: any) {
     console.error('Error fetching Instagram posts:', error);
     // Include the stack trace in the error message
-    const errorMessage = `Failed to fetch Instagram posts for account ${accountName}: ${error.message}. Stack: ${error.stack}`;
-    throw new Error(errorMessage);
+    throw new Error(`Failed to fetch Instagram posts for account ${accountName}.`);
   }
 }
