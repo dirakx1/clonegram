@@ -34,9 +34,16 @@ export async function getLatestInstagramPosts(accountName: string): Promise<Inst
 
   try {
     console.log(`Fetching Instagram posts for ${accountName} using URL: ${corsProxyUrl}${targetUrl}`);
-    const response = await fetch(`${corsProxyUrl}${targetUrl}`, {
-      headers: headers,
-    });
+    let response;
+    try {
+      response = await fetch(`${corsProxyUrl}${targetUrl}`, {
+        headers: headers,
+      });
+    } catch (fetchError: any) {
+      console.error('Fetch error:', fetchError);
+      throw new Error(`Failed to fetch data from Instagram: ${fetchError.message}`);
+    }
+
 
     if (!response.ok) {
       const errorText = await response.text();
