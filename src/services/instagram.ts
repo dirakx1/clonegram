@@ -1,80 +1,71 @@
-/**
- * Represents an Instagram post with an image URL.
- */
+// src/services/instagram.ts
+
 export interface InstagramPost {
-  /**
-   * The URL of the image in the Instagram post.
-   */
   imageUrl: string;
+  id: string;
+  caption?: string; // Optional caption
 }
 
 /**
- * Asynchronously retrieves the latest Instagram posts from a given account.
+ * Asynchronously retrieves the latest Instagram posts for the authenticated user.
  *
- * @param accountName The Instagram account name to fetch posts from.
+ * Uses the Instagram Basic Display API.
+ * https://developers.facebook.com/docs/instagram-basic-display-api/reference/user/media#reading
+ *
+ * @param accessToken The valid Instagram user access token.
+ * @param userId The Instagram user ID associated with the token.
+ * @param limit Optional limit for the number of posts to fetch (default/max might be imposed by API).
  * @returns A promise that resolves to an array of InstagramPost objects.
  */
-export async function getLatestInstagramPosts(accountName: string): Promise<InstagramPost[]> {
-  // Using corsproxy.io as a CORS proxy
-  const corsProxyUrl = 'https://api.allorigins.win/raw?url=';
+export async function getLatestInstagramPosts(
+  accessToken: string,
+  userId: string, // User ID is needed for the endpoint
+  limit: number = 10 // Default to fetching 10 posts
+): Promise<InstagramPost[]> {
+  console.log(`Fetching Instagram media for user ID: ${userId} using Basic Display API.`);
 
-  if (!corsProxyUrl) {
-    console.error('CORS proxy URL is not defined in environment variables. Ensure NEXT_PUBLIC_CORS_PROXY_URL is set.');
-    throw new Error('CORS proxy URL is not defined. Check your environment variables.');
-  }
-
-  const targetUrl = `https://instagram.com/api/v1/users/web_profile_info/?username=${accountName}`;
-  const headers = {
-      "x-ig-app-id": "936619743392459",
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36",
-      "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept": "*/*",
-    };
+  // Construct the API URL
+  // We need 'id' and 'media_url' fields. 'caption' is optional but potentially useful.
+  const fields = 'id,media_url,caption';
+  const url = `https://graph.instagram.com/${userId}/media?fields=${fields}&access_token=${accessToken}&limit=${limit}`;
 
   try {
-    console.log(`Fetching Instagram posts for ${accountName} using URL: ${corsProxyUrl}${targetUrl}`);
-    let response;
-    try {
-      response = await fetch(`${corsProxyUrl}${targetUrl}`, {
-        headers: headers,
-      });
-    } catch (fetchError: any) {
-      console.error('Fetch error:', fetchError);
-      throw new Error(`Failed to fetch data from Instagram: ${fetchError.message}`);
-    }
-
+    const response = await fetch(url);
+    const data = await response.json();
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Failed to fetch Instagram posts. Status: ${response.status}, Body: ${errorText}`);
-      throw new Error(`Failed to fetch Instagram posts. Status: ${response.status}`);
+        let errorMessage = `API error: ${response.status}`;
+        if (data?.error?.message) {
+            errorMessage += ` - ${data.error.message}`;
+        }
+        console.error('Error fetching Instagram media:', data);
+        // Special handling for common errors
+        if (data?.error?.code === 190) { // OAuthException: Token invalid or expired
+            throw new Error('Instagram token is invalid or expired. Please log in again.');
+        }
+        throw new Error(errorMessage);
     }
 
-    try {
-      const data = await response.json();
-      console.log(`Successfully fetched data for ${accountName}:`, data);
+    if (!data.data || !Array.isArray(data.data)) {
+      console.error('Unexpected API response format:', data);
+      throw new Error('Unexpected response format from Instagram API.');
+    }
 
-      if (!data.data?.user) {
-        throw new Error(`Could not find user ${accountName}. Response: ${JSON.stringify(data)}`);
-      }
-
-      // Check if edge_owner_to_timeline_media exists before accessing edges
-      const timelineMedia = data.data.user.edge_owner_to_timeline_media;
-      const edges = timelineMedia ? timelineMedia.edges : [];
-
-      const posts: InstagramPost[] = edges.map((edge: any) => ({
-        imageUrl: edge.node.display_url,
+    // Filter out any items that might not have a media_url (e.g., unsupported types)
+    const posts: InstagramPost[] = data.data
+      .filter((item: any) => item.media_url)
+      .map((item: any) => ({
+        id: item.id,
+        imageUrl: item.media_url,
+        caption: item.caption || '',
       }));
 
-      return posts;
-    } catch (parseError: any) {
-      console.error('Failed to parse JSON response:', parseError);
-      throw new Error(`Failed to parse JSON response.`);
-    }
+    console.log(`Successfully fetched ${posts.length} Instagram posts.`);
+    return posts;
+
   } catch (error: any) {
-    console.error('Error fetching Instagram posts:', error);
-    // Include the stack trace in the error message
-    throw new Error(`Failed to fetch Instagram posts for account ${accountName}.`);
+    console.error('Failed to fetch or process Instagram posts:', error);
+    // Re-throw the error to be handled by the caller
+    throw new Error(`Failed to retrieve Instagram posts: ${error.message}`);
   }
 }
