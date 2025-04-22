@@ -7,19 +7,20 @@ export default function InstagramLoginButton() {
   const handleLogin = () => {
     const clientId = process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID;
     const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI;
-    const scope = 'user_profile,user_media';
+    const scope = 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_messages,instagram_business_manage_comments'; // Basic permission scope for Instagram OAuth
 
     if (!clientId || !redirectUri) {
       console.error("Instagram App ID or Redirect URI is not configured in environment variables.");
-      // Optionally: Show an error message to the user
       return;
     }
 
+    // Using the correct Instagram OAuth endpoint
     const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code`;
 
-    console.log("Redirecting to Instagram login...");
+    console.log("Redirecting to Instagram OAuth...");
     window.location.href = authUrl;
   }
+
   return (
     <Button onClick={handleLogin}>
       <FaInstagram className="mr-2" />

@@ -19,18 +19,19 @@ export interface InstagramPost {
  */
 export async function getLatestInstagramPosts(
   accessToken: string,
-  userId: string, // User ID is needed for the endpoint
+  igId: string, // Instagram ID for the authenticated user
   limit: number = 10 // Default to fetching 10 posts
 ): Promise<InstagramPost[]> {
-  console.log(`Fetching Instagram media for user ID: ${userId} using Basic Display API.`);
+  console.log(`Fetching Instagram media for IG ID: ${igId} using Basic Display API.`);
 
   // Construct the API URL
   // We need 'id' and 'media_url' fields. 'caption' is optional but potentially useful.
   const fields = 'id,media_url,caption';
-  const url = `https://graph.instagram.com/${userId}/media?fields=${fields}&access_token=${accessToken}&limit=${limit}`;
+  const url = `https://graph.instagram.com/v22.0/${igId}/media?fields=${fields}&access_token=${accessToken}&limit=${limit}`;
 
   try {
     const response = await fetch(url);
+    
     const data = await response.json();
 
     if (!response.ok) {

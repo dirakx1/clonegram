@@ -14,8 +14,8 @@ import { getLatestInstagramPosts } from '@/services/instagram';
 // Updated Input Schema: Requires accessToken and userId, accountName is optional
 const AnalyzeInstagramStyleInputSchema = z.object({
   accessToken: z.string().describe('The Instagram user access token.'),
-  userId: z.string().describe('The Instagram user ID.'),
   accountName: z.string().optional().describe('Optional: The Instagram account name (used for context in the prompt).'),
+  igId: z.string().describe('The Instagram ID for the authenticated user.'),
 });
 export type AnalyzeInstagramStyleInput = z.infer<typeof AnalyzeInstagramStyleInputSchema>;
 
@@ -62,12 +62,12 @@ const analyzeInstagramStyleFlow = ai.defineFlow<
   },
   async input => {
     // Fetch posts using token and user ID
-    const instagramPosts = await getLatestInstagramPosts(input.accessToken, input.userId);
+    const instagramPosts = await getLatestInstagramPosts(input.accessToken, input.igId);
 
     if (!instagramPosts || instagramPosts.length === 0) {
       // Handle case where no posts are fetched or user has no media
       // You might want to return a default summary or throw a specific error
-      console.warn(`No Instagram posts found for user ID: ${input.userId}. Cannot analyze style.`);
+      console.warn(`No Instagram posts found for IG ID: ${input.igId}. Cannot analyze style.`);
       return {
         visualStyleSummary: "Could not analyze visual style as no Instagram posts were found or accessible."
       };

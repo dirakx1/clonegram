@@ -14,6 +14,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [igId, setIgId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -22,6 +23,7 @@ export default function Home() {
     const token = searchParams.get('access_token');
     const id = searchParams.get('user_id');
     const authError = searchParams.get('error');
+    const igId = searchParams.get('ig_id');
 
     if (authError) {
       setError(`Authentication failed: ${authError}`);
@@ -34,10 +36,11 @@ export default function Home() {
       window.history.replaceState({}, document.title, "/");
     }
 
-    if (token && id) {
-      console.log("Received access token and user ID from callback.");
+    if (token && id && igId) {
+      console.log("Received access token, user ID, and Instagram ID from callback.");
       setAccessToken(token);
       setUserId(id);
+      setIgId(igId);
       setError(null); // Clear any previous errors
       // Clear token/ID from URL for security
       window.history.replaceState({}, document.title, "/");
@@ -45,10 +48,12 @@ export default function Home() {
         // Check local storage if token/id aren't in URL (for persistence)
         const storedToken = localStorage.getItem('instagram_access_token');
         const storedUserId = localStorage.getItem('instagram_user_id');
-        if (storedToken && storedUserId) {
-            console.log("Restored token and user ID from local storage.")
+        const storedIgId = localStorage.getItem('instagram_ig_id');
+        if (storedToken && storedUserId && storedIgId) {
+            console.log("Restored token, user ID, and Instagram ID from local storage.")
             setAccessToken(storedToken);
             setUserId(storedUserId);
+            setIgId(storedIgId);
         }
     }
 
@@ -56,25 +61,28 @@ export default function Home() {
 
   // Store token in local storage when it changes
   useEffect(() => {
-      if (accessToken && userId) {
+      if (accessToken && userId && igId) {
           localStorage.setItem('instagram_access_token', accessToken);
           localStorage.setItem('instagram_user_id', userId);
+          localStorage.setItem('instagram_ig_id', igId);
       } else {
           localStorage.removeItem('instagram_access_token');
           localStorage.removeItem('instagram_user_id');
+          localStorage.removeItem('instagram_ig_id');
       }
-  }, [accessToken, userId]);
+  }, [accessToken, userId, igId]);
 
   const handleLogout = () => {
       setAccessToken(null);
       setUserId(null);
+      setIgId(null);
       // No need to remove from localStorage here, useEffect handles it
       console.log("Logged out.");
       toast({ title: "Logged Out", description: "You have been logged out." });
   };
 
   const generateImages = async () => {
-    if (!accessToken || !userId) {
+    if (!accessToken || !igId) {
         toast({
             variant: 'destructive',
             title: 'Authentication Error',
@@ -87,14 +95,13 @@ export default function Home() {
     setImageUrls([]);
     setError(null);
     try {
-      // Use the actual access token and user ID
+      // Use the actual access token and IG ID
       // NOTE: generateSimilarImage might need adjustment if it relies on accountName
       // It should ideally use the userId and token to fetch the logged-in user's media
       const result = await generateSimilarImage({
-        // instagramAccount: INSTAGRAM_ACCOUNT, // Remove or adjust this
         numberOfImages: 3,
         accessToken: accessToken,
-        userId: userId,
+        igId: igId,
       });
       setImageUrls(result.imageUrls);
     } catch (error: any) {
