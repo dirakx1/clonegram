@@ -7,13 +7,15 @@
  * - GenerateSimilarImageOutput - The return type for the generateSimilarImage function.
  */
 
-import { ai } from '@/ai/ai-instance';
+import { ai, imageGenerationModel } from '@/ai/ai-instance';
 import { z } from 'genkit';
 import { analyzeInstagramStyle } from '@/ai/flows/analyze-instagram-style';
+import parseDataURL from 'data-urls';
+import crypto from 'crypto';
+import { mkdir, writeFile } from 'fs/promises';
 
 // Updated Input Schema: Requires accessToken and userId
 const GenerateSimilarImageInputSchema = z.object({
-  // instagramAccount: z.string().optional().describe('The specific Instagram account to mimic (optional if using authenticated user).'),
   numberOfImages: z.number().default(1).describe('The number of images to generate.'),
   accessToken: z.string().describe('The Instagram access token for the authenticated user.'),
   igId: z.string().describe('The Instagram ID for the authenticated user.'),
@@ -27,13 +29,9 @@ export type GenerateSimilarImageOutput = z.infer<typeof GenerateSimilarImageOutp
 
 // Updated exported function to match flow input
 export async function generateSimilarImage(input: GenerateSimilarImageInput): Promise<GenerateSimilarImageOutput> {
-  // Input validation happens within the flow definition now
   return generateSimilarImageFlow(input);
 }
 
-// This tool's prompt is slightly simplified - it takes the overall style summary.
-// For better results, analyzeInstagramStyle could return structured data (style, subjects, colors)
-// and this tool's input schema could match that structure.
 const generateImage = ai.defineTool({
   name: 'generateImage',
   description: 'Generates an image based on a style summary.',
@@ -44,31 +42,39 @@ const generateImage = ai.defineTool({
 },
 async (input) => {
   try {
-    // Generate an image based on the provided style summary
-    const llmResponse = await ai.generate({
-      prompt: `Generate a high-resolution, photorealistic image based on the following style summary: ${input.styleSummary}. Focus on capturing the essence described.`,
+    // Generate an image based on the provided style summary using Imagen
+    const { media } = await ai.generate({
+      model: imageGenerationModel,
+      prompt: input.styleSummary,
       output: {
-        format: 'text',
+        format: 'media',
       },
     });
-    const responseText = (llmResponse.custom as any)?.text();
 
-    // For development/testing, return a placeholder image if generation fails
-    if (!responseText) {
-      console.warn("Image generation produced no result, using placeholder");
-      return "https://picsum.photos/800/800"; // Random placeholder image
+    if (!media) {
+      console.warn("Image generation produced no result");
+      throw new Error('No media generated.');
     }
 
-    const imageUrl = responseText.trim();
+    // Generate a unique filename for this image
+    const filename = `generated-${crypto.randomBytes(8).toString('hex')}.png`;
     
-    // Validate URL
-    try {
-      new URL(imageUrl);
-      return imageUrl;
-    } catch {
-      console.warn("Generated invalid URL, using placeholder");
-      return "https://picsum.photos/800/800";
+    // Parse the data URL and save the image
+    const data = parseDataURL(media.url);
+    if (!data) {
+      throw new Error('Invalid data URL returned from image generation.');
     }
+
+    // Save the image to the public directory
+    const publicPath = `/images/${filename}`;
+    const fullPath = `./public${publicPath}`;
+    
+    // Ensure the directory exists
+    await mkdir('./public/images', { recursive: true });
+    await writeFile(fullPath, data.body);
+
+    // Return the public URL for the image
+    return `${process.env.HOST_URL}${publicPath}`;
   } catch (error) {
     console.error("Error in image generation:", error);
     // Return a placeholder image instead of failing
@@ -92,7 +98,6 @@ async (input) => {
     const { visualStyleSummary } = await analyzeInstagramStyle({
         accessToken: input.accessToken,
         igId: input.igId,
-        // accountName is optional in analyzeInstagramStyle, not passing it here
     });
 
     console.log("Visual style summary received:", visualStyleSummary);
@@ -100,7 +105,6 @@ async (input) => {
     // Handle case where analysis fails or returns no summary
     if (!visualStyleSummary || visualStyleSummary.includes("Could not analyze")) {
         console.warn("Cannot generate images due to missing style summary.");
-        // Return empty array or throw error based on desired behavior
         return { imageUrls: [] }; 
     }
 
@@ -119,19 +123,18 @@ async (input) => {
     // Wait for all image generation promises to resolve
     try {
         const results = await Promise.all(imagePromises);
-        const validUrls = results.filter(url => url && !url.includes("Generation+Failed")); // Filter out failures
+        const validUrls = results.filter(url => url && !url.includes("Generation+Failed"));
         console.log(`Successfully generated ${validUrls.length} image(s).`);
         
         if (validUrls.length < input.numberOfImages) {
             console.warn(`Failed to generate ${input.numberOfImages - validUrls.length} image(s).`);
-            // Optionally inform the user via toast or error message about partial success
         }
-
+        
         return {
             imageUrls: validUrls,
         };
     } catch (error) {
         console.error("Error during parallel image generation:", error);
-        throw new Error('Failed to generate images.'); // Re-throw or handle as needed
+        throw new Error('Failed to generate images.');
     }
 });

@@ -99,10 +99,11 @@ export default function Home() {
       // NOTE: generateSimilarImage might need adjustment if it relies on accountName
       // It should ideally use the userId and token to fetch the logged-in user's media
       const result = await generateSimilarImage({
-        numberOfImages: 3,
+        numberOfImages: 1,
         accessToken: accessToken,
         igId: igId,
       });
+      
       setImageUrls(result.imageUrls);
     } catch (error: any) {
       console.error("Error generating images:", error);
