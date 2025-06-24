@@ -1,3 +1,6 @@
+# Clonegram
+* Create automatic instagram posts based on your olders post (genAI enabled)
+
 # Firebase Studio
 
 This is a NextJS starter in Firebase Studio.
